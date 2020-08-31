@@ -1,44 +1,347 @@
 ---
-title: "Analisi sul mondo del lavoro, nell'ambito dell'IT"
+title: "Analisi del mondo del lavoro IT"
 author: "Vincenzo Carlino"
 date: "22/8/2020"
-output: 
-  ioslides_presentation:
-    css: 'scrollable_slides.css'
+output:
+  slidy_presentation:
     incremental: yes
-fig_width: 10 
-fig_height: 8
-editor_options: 
+    fig_caption: false
+    css: presentation.css
+    footer: "Vincenzo Carlino 144744"
+editor_options:
   chunk_output_type: inline
 ---
 
-## Introduzione
-La vita è breve. 
-Spenderemo più della metà della nostra vita a lavorare.
-Come voi, anche me questa consapevolezza rende triste, ma proviamo a capire qualcosa di più sul mondo del lavoro, per trarne più vantaggi possibili.
 
-## Dove?
-E' importante vivere in un posto che ci piaccia, che ci stimoli, e che non ci faccia attendere tutto l'anno le ferie per andare lontano.
+```{r setup, echo= FALSE}
+knitr::opts_chunk$set(cache = FALSE, message = FALSE, warning = FALSE, echo = FALSE)
+```
 
-![](./images/three_top_jobs_cities.png)
-<br><br>Se la meta dei vostri sogni è citata nel grafico sovrastante, sono contento per voi. Io lo sono un pò meno.
+##
 
-## Mamma voglio fare il data analyst!
-All'affermazione soprastante la mamma mi risponderebbe di prendere un biglietto per Londra (e visti in tempi di farci anche l'assicurazione per il rimborso).
+<div align="center">
+ <img src="./images/IT-header.jpg" />
+</div>
 
-![](./images/da_jobs_cities.png)
+<div align="center">
 
-Ma invece a livello mondiale qual'è l'azienda con più opportunità per questa figura?
+> <b>You can never understand everything. But, you should push yourself to understand the system.</b><br/>
+> <i>- Ryan Dahl (Creator of Node JS)</i>
 
-![](./images/top_companies_for_da.png)
+</div>
 
-Ok, dopo andremo a parlare anche di guadagno, teniamo questa informazione per ultima perchè so che è l'unica che vi interessa veramente
+## Scopo
 
-## Un analisi generale.
-Il 20° secolo e le prime due decadi del 21° secolo hanno visto variare il mondo drasticamente. Vediamo qual'è la decade con più aziende fondate
+Il mondo del lavoro, un argomento che prima o poi, riguarderà ognuno di noi, chi prima chi poi. 
+Io da studente lavoratore, sono già immerso in questo universo, e devo ammettere che fino ad oggi il mio panorama era molto ristretto.
+Lo scopo di questa analisi è fornire risposte a domande che potrebbero essere utili per il nostro futuro:
 
-![](./images/foundation_years.png)
+<ul>
+<li>Quali sono le città che offrono più opportunità? E se io voglio lavorare come: data analyst?</li>
+<li>Quali aziende offrono più opportunità? Come data analyst?</li>
+<li>Dal 1900 ad oggi, qual'è la decade che ha visto nascere più aziende? Che settori spiccavano?</li>
+<li>La dimensione di un'azienda dipende dalla sua tipologia?</li>
+<li>
+Analizziamo il mondo del lavoro in inghilterra:
+<ul>
+<li>Dal 1900 ad oggi, qual'è la decade che ha visto nascere più aziende? Che settori spiccavano?</li>
+<li>Se voglio lavorare come data analyst, in che settore mi conviene di più?</li>
+<li>Se voglio lavorare come programmatore, che linguaggio è più reddittizio?</li>
+</ul>
+</li>
+</ul>
 
-## 2000 - 2010
+```{r include=FALSE}
+library(readr)
+library("dplyr")
+library("tidyr")
+library(ggplot2)
+library(stringr)
+library(plyr)
+library(tidyverse)
+library(tidytext)
+theme_set(theme_classic())
 
-![](./images/sectors_companies_years.png)
+# Importazione del csv
+jobs_listings <- read.csv("dataset/glassdoor.csv")
+```
+
+## Quali sono le città che offrono più opportunità? 
+
+Mi raccomando, fate il biglietto con l'assicurazione di rimborso...
+
+```{r out.extra='class="centered"', fig.width=10}
+jobs_listings_top_four_cities <- jobs_listings %>% 
+  group_by(header.location) %>%
+  dplyr::summarise(count = n(), .groups = 'drop') %>% 
+  arrange(desc(count)) %>%
+  slice(1:3)
+
+theme_set(theme_classic())
+ggplot(jobs_listings_top_four_cities, 
+       aes(x=header.location, y=count)) + 
+  geom_bar(stat = "identity") +
+  labs(title = "Le 3 migliori città",
+       y="Numero di annunci", 
+       x= "Città") + 
+  coord_flip()
+```
+
+## E se io voglio lavorare come: data analyst?
+
+```{r out.extra='class="centered"', fig.width=10}
+jobs_for_data_science <- jobs_listings %>%
+  filter(str_detect(header.normalizedJobTitle, "data analyst"))
+
+top_four_cities_for_data_science  <- jobs_for_data_science %>%
+  group_by(header.location) %>%
+  dplyr::summarise(count = n(), .groups = 'drop') %>% 
+  arrange(desc(count)) %>%
+  slice(1:3)
+
+ggplot(top_four_cities_for_data_science, 
+       aes(x=header.location, y=count)) + 
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Le 3 migliori città con opportunità come data analyst",
+      y="Numero di annunci",
+    x= "Città") + 
+  coord_flip()
+```
+
+## Quali aziende offrono più opportunità?
+
+Spoiler: Amazon
+
+```{r out.extra='class="centered"', fig.width=10}
+most_employer_jobs <- jobs_listings %>% 
+  filter(!is.na(map.employerName) & !is.null(map.employerName)
+  & map.employerName != "") %>%
+  group_by(map.employerName) %>%
+  dplyr::summarise(count = n(), .groups = 'drop') %>% 
+
+    arrange(desc(count)) %>%
+  slice(1:3)
+
+ggplot(most_employer_jobs, aes(x=map.employerName, y=count)) + 
+  geom_bar(stat = "identity") +
+  geom_bar(stat = "identity") +
+  labs(title = "Le 3 aziende con più opportunità lavorative",
+       y="Numero di annunci", x= "Azienda") + 
+  coord_flip()
+```
+
+## E come data analyst?
+
+```{r out.extra='class="centered"', fig.width=10}
+companies_with_most_opportunities_for_da <- jobs_listings %>%
+  filter(!is.na(map.employerName)
+         & !is.null(map.employerName) 
+         & map.employerName != "" 
+         & str_detect(header.normalizedJobTitle, "data analyst")) %>%
+  group_by(map.employerName) %>%
+  dplyr::summarise(count = n(), .groups = 'drop') %>% 
+  arrange(desc(count)) %>%
+  slice(1:3)
+
+ggplot(companies_with_most_opportunities_for_da, 
+       aes(x=map.employerName, y=count)) + 
+  geom_bar(stat = "identity") +
+  labs(
+    title = "Le 3 aziende con più annunci di lavoro per data analyst",
+       y="Numero di annunci", x= "Azienda") + 
+  coord_flip()
+```
+
+## Dal 1900 ad oggi, qual'è la decade che ha visto nascere più aziende?
+
+E pensare che doveva finire il mondo, invece...
+
+```{r out.extra='class="centered"', fig.width=10}
+years <- c(1899, 1909, 1919, 1929, 1939, 1949, 
+           1959, 1969, 1979, 1989, 1999, 2009, 2019)
+manipulate_data <- function(frame, n)
+{
+  companies_foundation_year <- jobs_listings %>%
+    filter(overview.foundedYear > years[n-1] & 
+             overview.foundedYear < (years[n] + 1)) %>%
+    group_by(overview.foundedYear) %>%
+    dplyr::summarise(count = n(), .groups = 'drop')
+  total <- sum(companies_foundation_year$count)
+  label <- paste((years[n-1]+1), (years[n]+1), sep = " - ")
+  frame <- rbind(frame, data.frame(decade = label, count = total))
+  if (length(years) > n){
+    return(manipulate_data(frame, n+1))
+  }
+  return(frame)
+}
+
+result <- manipulate_data(data.frame(decade = c(), count = c()), 2)
+
+pct <- round(result$count/sum(result$count)*100)
+lbls <- paste(result$decade, pct, sep = ", ")
+lbls <- paste(lbls,"%",sep="")
+pie(result$count,labels = lbls, col=rainbow(length(lbls)),
+    main="Aziende fondate dal 1900 ad oggi")
+```
+
+## Settori di punta?
+
+```{r out.extra='class="centered"', fig.width=15}
+companies_2000_2010 <- jobs_listings %>%
+  filter(overview.foundedYear > 1999
+         & overview.foundedYear <= 2010 
+         & overview.sector != "") %>%
+  select(overview.sector, overview.foundedYear)
+
+g <- ggplot(companies_2000_2010,
+            aes(x = as.character(overview.foundedYear),
+                fill = overview.sector))
+g + geom_bar(aes(fill=overview.sector),
+             width = 0.5) + 
+  labs(
+    tititle="Settori di imprese fondate negli anni 2000-2010", 
+       x="Anno di fondazione",
+       fill="# Settori",
+       y="Numero")
+```
+
+## Quindi l'IT vince, vediamo quali città hanno spinto maggiormente in questo settore
+
+```{r out.extra='class="centered"', fig.width=10}
+jobs_for_it_companies <- jobs_listings %>%
+  filter(overview.foundedYear > 1999 & overview.foundedYear <= 2010
+         & overview.sector == "Information Technology") %>%
+  group_by(header.location) %>%
+  dplyr::summarise(count = n(), .groups = 'drop') %>%
+  arrange(desc(count)) %>%
+  slice(1:20)
+
+ggplot(jobs_for_it_companies, aes(x=header.location, y=count)) + 
+  geom_bar(stat = "identity") +
+  coord_flip() + 
+  labs(
+    title="Le 20 città con più aziende (2000-2010) nel settore dell' IT", 
+       x="Città",
+       y="Numero")
+```
+
+## La dimensione di un'azienda dipende dalla sua tipologia?
+
+In base al tipo di azienda, vediamo se troveremo facilmente parcheggio
+
+```{r out.extra='class="centered"', fig.width=10}
+type_of_company_for_sector <- jobs_listings %>%
+  filter(overview.size != "" & overview.size != "Unknown"
+         & overview.type != "" & overview.type != "") %>%
+  select(overview.size, overview.type) 
+
+g <- ggplot(type_of_company_for_sector, aes(x = overview.type, fill = overview.size))
+g + geom_bar(aes(fill=overview.size), width = 0.5) + 
+  theme(axis.text.x = element_text(angle=90, vjust=0.6)) +
+  labs(title="Tipologie e numero dipendenti per azienda", 
+       x="Tipologia di azienda",
+       fill="# Numero di dipendenti",
+       y="Numero")
+```
+
+## Inghilterra {.bigger}
+
+<div align="center">
+ <img src="./images/uk.png" />
+</div>
+
+## Dal 1900 ad oggi, qual'è la decade che ha visto nascere più aziende?
+
+```{r out.extra='class="centered"', fig.width=10}
+companies_uk_foundation_year_over_1900 <- jobs_listings %>%
+  filter((map.country == "United Kingdom" | map.country == "Uk" | map.country == "England") & overview.foundedYear > 1900) %>%
+  group_by(overview.foundedYear) %>%
+  dplyr::summarise(count = n(), .groups = 'drop')
+
+ggplot(companies_uk_foundation_year_over_1900, aes(x=overview.foundedYear)) + 
+  geom_line(aes(y=count)) + 
+  labs(title="Anno di fondazione delle aziende", 
+       x="Anno", 
+       y="Numero")
+```
+
+## Che settori spiccavano nel 2006?
+
+```{r out.extra='class="centered"', fig.width=10}
+sectors_companies_founded_2006 <- jobs_listings %>%
+  filter((map.country == "United Kingdom" 
+          | map.country == "Uk"
+          | map.country == "England") 
+         & overview.sector != "" 
+         & overview.foundedYear == 2006) %>%
+  group_by(overview.sector) %>%
+  dplyr::summarise(count = n(), .groups = 'drop')
+
+pct <- round(sectors_companies_founded_2006$count/sum(sectors_companies_founded_2006$count)*100)
+lbls <- paste(sectors_companies_founded_2006$overview.sector, pct, sep = ", ") # add percents to labels
+lbls <- paste(lbls,"%",sep="") # ad % to labels
+pie(sectors_companies_founded_2006$count,labels = lbls, col=rainbow(length(lbls)),
+    main="Settori delle aziende fondate nel 2006")
+```
+
+## Se voglio lavorare come data analyst, in che settore mi conviene di più?
+
+```{r out.extra='class="centered"', fig.width=10}
+jobs_uk_salaries <- jobs_listings %>%
+  filter((map.country == "United Kingdom"
+          | map.country == "Uk"
+          | map.country == "England")
+         & overview.sector != ""
+         & salary.currency.name == "United Kingdom Pound"
+         & str_detect(header.normalizedJobTitle, "data analyst") ) %>%
+  select(overview.sector, salary.salaries)
+jobs_uk_avg_salaries <- ddply(jobs_uk_salaries,
+                              .(overview.sector), 
+                              summarize,  
+                              avg=mean(salary.salaries))
+
+ggplot(jobs_uk_avg_salaries, aes(x=overview.sector, y=avg)) + 
+  geom_point(col="tomato2", size=3) +
+  geom_segment(aes(x=overview.sector, 
+                   xend=overview.sector, 
+                   y=min(avg), 
+                   yend=max(avg)), 
+               linetype="dashed", 
+               size=0.1) +
+  labs(
+    title="Media dei salari per settore per la figura di data analyst",
+       y = "Media salari", x= "Settori") +  
+  coord_flip()
+```
+
+## Se voglio lavorare come programmatore, che linguaggio è più reddittizio?
+
+```{r out.extra='class="centered"', fig.width=10}
+jobs_uk_programming_language <- jobs_listings %>%
+  filter((map.country == "United Kingdom"
+          | map.country == "Uk"
+          | map.country == "England")
+         & overview.sector != ""
+         & salary.currency.name == "United Kingdom Pound") %>%
+  select(salary.salaries, job.description) %>%
+  unnest_tokens(word, job.description) %>%
+  filter(word == "java" | word == "swift" | word == "c" | word == "python" |
+           word == "c++" | word == "javascript" | 
+           word == "sql" | word == "typescript") %>%
+  group_by(word)
+
+jobs_uk_programming_language <- ddply(jobs_uk_programming_language,
+                                      .(word), 
+                                      summarize,  
+                                      avg=mean(salary.salaries))
+
+theme_set(theme_bw())
+
+ggplot(jobs_uk_programming_language, aes(x=word, y=avg)) + 
+  geom_bar(stat="identity", width=.2, fill="tomato3") + 
+  labs(title="Linguaggi di programmazione e media salario", 
+       x = "Linguaggio", 
+       y="Salario") + 
+  theme(axis.text.x = element_text(angle=90, vjust=0.6))
+```

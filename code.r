@@ -4,6 +4,8 @@ library("tidyr")
 library(ggplot2)
 library(stringr)
 library(plyr)
+library(tidyverse)
+library(tidytext)
 theme_set(theme_classic())
 
 # Importazione del csv
@@ -97,6 +99,9 @@ companies_2000_2010 <- jobs_listings %>%
   filter(overview.foundedYear > 1999 & overview.foundedYear <= 2010 & overview.sector != "") %>%
   select(overview.sector, overview.foundedYear)
 
+plot(companies_2000_2010$overview.sector, companies_2000_2010$overview.foundedYear)
+abline(lm(companies_2000_2010$overview.sector ~ companies_2000_2010$overview.foundedYear))
+
 ggplot(companies_2000_2010, aes(x = overview.foundedYear, fill = overview.sector)) +            
   geom_histogram(position = "identity", alpha = 1, bins = 25)
 
@@ -188,6 +193,41 @@ ggplot(jobs_uk_avg_salaries, aes(x=overview.sector, y=avg)) +
   labs(title="Media dei salari per settore", y = "Media salari", x= "Settori") +  
   coord_flip()
 
+jobs_uk_salaries <- jobs_listings %>%
+  filter((map.country == "United Kingdom" | map.country == "Uk" | map.country == "England") & overview.foundedYear > 1900 & salary.currency.name == "United Kingdom Pound") %>%
+  select(overview.foundedYear, salary.salaries)
+
+plot(jobs_uk_salaries$overview.foundedYear, jobs_uk_salaries$salary.salaries)
+abline(lm(jobs_uk_salaries$salary.salaries ~ jobs_uk_salaries$overview.foundedYear))
+
+# Salari per linguaggio di programmazione, in UK
+jobs_uk_programming_language <- jobs_listings %>%
+  filter((map.country == "United Kingdom"
+          | map.country == "Uk"
+          | map.country == "England")
+         & overview.sector != ""
+         & salary.currency.name == "United Kingdom Pound") %>%
+  select(salary.salaries, job.description) %>%
+  unnest_tokens(word, job.description) %>%
+  filter(word == "java" | word == "swift" | word == "c" | word == "python" |
+           word == "c++" | word == "javascript" | 
+           word == "sql" | word == "typescript") %>%
+  group_by(word)
+
+jobs_uk_programming_language <- ddply(jobs_uk_programming_language,
+                                      .(word), 
+                                      summarize,  
+                                      avg=mean(salary.salaries))
+
+theme_set(theme_bw())
+
+ggplot(jobs_uk_programming_language, aes(x=word, y=avg)) + 
+  geom_bar(stat="identity", width=.2, fill="tomato3") + 
+  labs(title="Linguaggi di programmazione e media salario", 
+       x = "Linguaggio", 
+       y="Salario") + 
+  theme(axis.text.x = element_text(angle=90, vjust=0.6))
+
 # Decima domanda: Anno di fondazione delle aziende?
 companies_uk_foundation_year <- jobs_listings %>%
   filter((map.country == "United Kingdom" | map.country == "Uk" | map.country == "England") & overview.foundedYear > 0) %>%
@@ -240,3 +280,4 @@ salary_old_companies <- jobs_listings %>%
   filter((map.country == "United Kingdom" | map.country == "Uk" | map.country == "England") & overview.foundedYear < 2000 & salary.salaries > 0)
 
 View(mean(salary_old_companies$salary.salaries))
+

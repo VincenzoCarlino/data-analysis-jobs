@@ -30,6 +30,8 @@ library("tidyr")
 library(ggplot2)
 library(stringr)
 library(plyr)
+library(tidyverse)
+library(tidytext)
 theme_set(theme_classic())
 
 # Importazione del csv
@@ -83,7 +85,7 @@ ggplot(top_four_cities_for_data_science,
   labs(
     title = "Le 3 migliori città con opportunità come data analyst",
       y="Numero di annunci",
-    nx= "Città") + 
+    x= "Città") + 
   coord_flip()
 ```
 A quanto pare, Londra è la meta migliore, città interessante e sempre in movimento.
@@ -130,7 +132,7 @@ ggplot(companies_with_most_opportunities_for_da,
   geom_bar(stat = "identity") +
   labs(
     title = "Le 3 aziende con più annunci di lavoro per data analyst",
-       y="Numero di annunci", x= "Città") + 
+       y="Numero di annunci", x= "Azienda") + 
   coord_flip()
 ```
 
@@ -264,6 +266,38 @@ Ok, quindi come scendiamo dall'aereo mandiamo il CV alle aziende nell'ambito del
 Immagino che potremmo chiudere qua l'analisi, ma sappiamo che a tutti noi interessano solo i soldi per apparire belli su instagram.
 Ma proviamo a capirci di più sul panorama inglese.
 
+## E se invece vogliamo programmare?
+
+```{r}
+jobs_uk_programming_language <- jobs_listings %>%
+  filter((map.country == "United Kingdom"
+          | map.country == "Uk"
+          | map.country == "England")
+         & overview.sector != ""
+         & salary.currency.name == "United Kingdom Pound") %>%
+  select(salary.salaries, job.description) %>%
+  unnest_tokens(word, job.description) %>%
+  filter(word == "java" | word == "swift" | word == "c" | word == "python" |
+           word == "c++" | word == "javascript" | 
+           word == "sql" | word == "typescript") %>%
+  group_by(word)
+
+jobs_uk_programming_language <- ddply(jobs_uk_programming_language,
+                                      .(word), 
+                                      summarize,  
+                                      avg=mean(salary.salaries))
+
+theme_set(theme_bw())
+
+ggplot(jobs_uk_programming_language, aes(x=word, y=avg)) + 
+  geom_bar(stat="identity", width=.2, fill="tomato3") + 
+  labs(title="Linguaggi di programmazione e media salario", 
+       x = "Linguaggio", 
+       y="Salario") + 
+  theme(axis.text.x = element_text(angle=90, vjust=0.6))
+```
+
+
 ## Studiamo gli anni di fondazione delle aziende
 
 Vediamo come si distribuiscono gli anni di fondazione delle aziende.
@@ -292,7 +326,8 @@ sectors_companies_founded_2006 <- jobs_listings %>%
   filter((map.country == "United Kingdom" 
           | map.country == "Uk"
           | map.country == "England") 
-         & overview.sector != "" & overview.foundedYear == 2006) %>%
+         & overview.sector != "" 
+         & overview.foundedYear == 2006) %>%
   group_by(overview.sector) %>%
   dplyr::summarise(count = n(), .groups = 'drop')
 
