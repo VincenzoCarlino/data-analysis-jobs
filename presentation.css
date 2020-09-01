@@ -28,13 +28,6 @@ table.kable_wrapper {
   transform: translate(-50%, -50%);
 }
 
-img.dream_team {
-  position: absolute;
-  left: 50%;
-  top: 70%;
-  transform: translate(-50%, -55%);
-}
-
 .quote {
   width: 50%;
   margin-left: 25%;
